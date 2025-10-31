@@ -30,8 +30,10 @@ async function run() {
     const db = client.db("smart_db");
     const productsCollection = db.collection("products");
 
-    //get all
+    //get all , sort asc:-1 dsc:1, limit, skip, Field ByDefault _id deya take
     app.get("/products", async (req, res) => {
+      //   const projectFields = { title: 1, price_min: 1, price_max: 1, image: 1 };
+      //   const cursor = productsCollection .find() .sort({ price_min: 1 }) .limit(5) .skip(2) .project(projectFields);
       const cursor = productsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
