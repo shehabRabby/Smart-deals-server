@@ -84,7 +84,7 @@ async function run() {
       res.send(result);
     });
 
-    //Update single
+    //update single
     app.patch("/products/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -96,6 +96,30 @@ async function run() {
         },
       };
       const result = await productsCollection.updateOne(query, update);
+      res.send(result);
+    });
+
+    // bids post
+    app.post("/bids", async (req, res) => {
+      const newBid = req.body;
+      const result = await bidsCollection.insertOne(newBid);
+      res.send(result);
+    });
+
+    // bids delete working
+    app.delete("/bids/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { product: id };
+      const result = await bidsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //get bids working
+    app.get("/bids/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { product: id };
+      const result = await bidsCollection.findOne(query);
       res.send(result);
     });
 
