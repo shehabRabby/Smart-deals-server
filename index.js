@@ -39,8 +39,8 @@ async function run() {
       const query = { email: email };
       const existingUser = await usersCollection.findOne(query);
 
-      if(existingUser) {
-        res.send({message: "User Already Exists. Do not need to insert"});
+      if (existingUser) {
+        res.send({ message: "User Already Exists. Do not need to insert" });
       } else {
         const result = await usersCollection.insertOne(newUser);
         res.send(result);
@@ -65,11 +65,23 @@ async function run() {
       res.send(result);
     });
 
+    //homepage 6 latest products
+    app.get("/latest-products", async (req, res) => {
+      const cursor = productsCollection
+        .find()
+        .sort({ created_at: -1 })
+        .limit(8);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     //get single
     app.get("/products/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await productsCollection.findOne(query);
+      // const query = { _id: new ObjectId(id) };
+      // const result = await productsCollection.findOne(query);
+      const result = await productsCollection.findOne({ _id: id });
+      console.log(result);
       res.send(result);
     });
 
@@ -115,14 +127,23 @@ async function run() {
       res.send(result);
     });
 
-    // bids post
+    //post bids by users
+    app.get("/products/bids/:productId", async (req, res) => {
+      const productId = req.params.productId;
+      const query = { product: productId };
+      const cursor = bidsCollection.find(query).sort({ bid_price: -1 });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // post bids
     app.post("/bids", async (req, res) => {
       const newBid = req.body;
       const result = await bidsCollection.insertOne(newBid);
       res.send(result);
     });
 
-    // bids delete working
+    // delete bids
     app.delete("/bids/:id", async (req, res) => {
       const id = req.params.id;
       console.log(id);
@@ -131,7 +152,7 @@ async function run() {
       res.send(result);
     });
 
-    //get bids working
+    //get bids
     app.get("/bids/:id", async (req, res) => {
       const id = req.params.id;
       const query = { product: id };
