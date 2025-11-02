@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
@@ -8,10 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-//smartdbUser
-//8X5MebyemSSZlhsZ
-const uri =
-  "mongodb+srv://smartdbUser:8X5MebyemSSZlhsZ@cluster0.zyoungn.mongodb.net/?appName=Cluster0";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zyoungn.mongodb.net/?appName=Cluster0`;
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -51,7 +49,6 @@ async function run() {
     app.get("/products", async (req, res) => {
       //   const projectFields = { title: 1, price_min: 1, price_max: 1, image: 1 };
       //   const cursor = productsCollection .find() .sort({ price_min: 1 }) .limit(5) .skip(2) .project(projectFields);
-
       console.log(req.query);
       const email = req.query.email;
       const query = {};
@@ -136,6 +133,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/bids", async (req, res) => {
+      const query = {};
+      if (query.email) {
+        query.buyer_email = email;
+      }
+      const cursor = bidsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // post bids
     app.post("/bids", async (req, res) => {
       const newBid = req.body;
@@ -146,8 +153,10 @@ async function run() {
     // delete bids
     app.delete("/bids/:id", async (req, res) => {
       const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      // const query = { product: id };
       console.log(id);
-      const query = { product: id };
+      // const result = await bidsCollection.deleteOne(query);
       const result = await bidsCollection.deleteOne(query);
       res.send(result);
     });
@@ -159,7 +168,6 @@ async function run() {
       const result = await bidsCollection.findOne(query);
       res.send(result);
     });
-
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
