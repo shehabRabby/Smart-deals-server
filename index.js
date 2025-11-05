@@ -5,6 +5,13 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
+// came firebase
+const admin = require("firebase-admin");
+const serviceAccount = require("./smart-deals-firebase-admin-key.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
 // middleware
 app.use(cors());
 app.use(express.json());
@@ -21,6 +28,29 @@ const client = new MongoClient(uri, {
 app.get("/", (req, res) => {
   res.send("Smart server is running");
 });
+
+const verifyFireBaseToken = async (req, res, next) => {
+  // console.log("Inside the Middleware:", req.headers);
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+
+  const token = authorization.split(" ")[1];
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+
+  // verify toke
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    console.log("After Decode Token : ", decoded);
+    req.token_email = decoded.email;
+    next();
+  } catch {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+};
 
 async function run() {
   try {
@@ -98,11 +128,15 @@ async function run() {
     });
 
     //bids apis
-    app.get("/bids", async (req, res) => {
+    app.get("/bids", verifyFireBaseToken, async (req, res) => {
+      // console.log("Inside the Api:", req.headers); //user token
       const email = req.query.email;
       const query = {};
       if (email) {
         query.buyer_email = email;
+        if (email !== req.token_email) {
+          return res.status(403).send({ message: "Forbiden access" });
+        }
       }
       const cursor = bidsCollection.find(query);
       const result = await cursor.toArray();
@@ -129,16 +163,6 @@ async function run() {
       const productId = req.params.productId;
       const query = { product: productId };
       const cursor = bidsCollection.find(query).sort({ bid_price: -1 });
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    app.get("/bids", async (req, res) => {
-      const query = {};
-      if (query.email) {
-        query.buyer_email = email;
-      }
-      const cursor = bidsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
