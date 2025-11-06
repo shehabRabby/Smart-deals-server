@@ -5,7 +5,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// came firebase
+// came firebase server side admin
 const admin = require("firebase-admin");
 const serviceAccount = require("./smart-deals-firebase-admin-key.json");
 admin.initializeApp({
@@ -29,6 +29,7 @@ app.get("/", (req, res) => {
   res.send("Smart server is running");
 });
 
+
 const verifyFireBaseToken = async (req, res, next) => {
   // console.log("Inside the Middleware:", req.headers);
   const authorization = req.headers.authorization;
@@ -51,6 +52,8 @@ const verifyFireBaseToken = async (req, res, next) => {
     return res.status(401).send({ message: "Unauthorized access" });
   }
 };
+
+
 
 async function run() {
   try {
@@ -113,7 +116,8 @@ async function run() {
     });
 
     //post single
-    app.post("/products", async (req, res) => {
+    app.post("/products", verifyFireBaseToken, async (req, res) => {
+      console.log("Headers in the post ", req.headers);
       const newProduct = req.body;
       const result = await productsCollection.insertOne(newProduct);
       res.send(result);
